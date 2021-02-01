@@ -1,0 +1,3 @@
+#ignore authorized_keys file
+authorized_keys
+Z98_send_mail_on_login.sh
