@@ -12,11 +12,27 @@
 ###############Globals###########
 
 NEW_SERVER=192.168.1.168
-USERNAME=$(who am i | awk '{print $1}')
 DOMAIN=$(hostname -d)
 FILES_DIR="./files"
 #we are either running this from a control server or locally
 REMOTE=false
+##########
+if $REMOTE; then
+	USERNAME=$(who am i | awk '{print $1}')
+else
+  if [[ $SUDO_USER == "" ]]; then
+		USERNAME=$USER
+	else
+		USERNAME=$SUDO_USER
+	fi
+fi
+
+if [[ $USERNAME == "" || $USERNAME == "root" ]]; then
+	echo "Error: Must find the non-root, non-blank user"
+	exit 1
+else
+	echo "Running as user $USERNAME"
+fi
 
 #######Functions##############
 
@@ -75,6 +91,11 @@ function run_command() {
 		$command
 	fi
 	_ret=$?
+  if [[ $_ret -eq 0 ]]; then
+    echo "Success Executing: $command"
+  else
+    echo "Failure Executing: $command"
+  fi
 	return $_ret
 }
 
@@ -143,7 +164,7 @@ fi
 echo "Attempting to setup logging all commands script"
 if copy_file_to_tmp $FILES_DIR/Z99-bashlogging.sh ; then
 	echo "Setting up $FILES_DIR/Z99-bashlogging.sh"
-	run_command "sudo mv /tmp/Z99-bashlogging.sh /etc/profile.d/ && sudo ls /etc/profile.d/"
+	run_command "sudo mv /tmp/Z99-bashlogging.sh /etc/profile.d/"
 else
 	echo "can't copy over file Z99-bashlogging.sh"
 	exit 1
@@ -161,14 +182,15 @@ echo "Attempting to lock down ssh to key access only"
 #	you lock yourself out. 
 if ! $REMOTE ; then
 	if [[ ! -s /home/$USERNAME/.ssh/authorized_keys ]]; then
-		echo "Not setting up key only ssh because authorized_keys file is empty"
+		echo "Not setting up key only ssh because /home/$USERNAME/.ssh/authorized_keys is empty"
 		echo "Stopping here. Rerun once set, or run from remote machine"
 		exit 1
 	fi
 fi
 
 if copy_file_to_tmp $FILES_DIR/10_sshd_local.conf; then
-	run_command "sudo mv /tmp/10_sshd_local.conf /etc/ssh/sshd_config.d/ && sudo  service ssh reload"
+	run_command "sudo mv /tmp/10_sshd_local.conf /etc/ssh/sshd_config.d/ "
+  run_command "sudo service ssh reload"
 else
 	echo "can't copy over sshd_config.d files"
 	exit 1
