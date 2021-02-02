@@ -113,7 +113,9 @@ else
 	sudo apt install openssh-server
 fi
 
+
 HOSTNAME=run_command 'hostname'
+
 if run_command 'sudo -v'; then
 	echo "sudo working"
 else
@@ -144,8 +146,24 @@ else
 	exit 1
 fi
 
+if ! $REMOTE && [ -s "/home/$USERNAME/.ssh/authorized_hosts" ] ; then
+	#Only run this if running on the local server
+	if ssh-keygen; then
+		echo "public/private key for server generated"
+	fi
+fi
 
 echo "Attempting to lock down ssh to key access only"
+#First check that the file /home/$USERNAME/.ssh/authorized_hosts exists otherwise
+#	you lock yourself out. 
+if ! $REMOTE ; then
+	if [[ ! -s /home/$USERNAME/.ssh/authorized_hosts ]]; then
+		echo "Not setting up key only ssh because authorized_hosts file is empty"
+		echo "Stopping here. Rerun once set, or run from remote machine"
+		exit 1
+	fi
+fi
+
 if copy_file_to_tmp $FILES_DIR/10_sshd_local.conf; then
 	run_command "sudo mv /tmp/10_sshd_local.conf /etc/ssh/sshd_config.d/ && sudo  service ssh reload"
 else
