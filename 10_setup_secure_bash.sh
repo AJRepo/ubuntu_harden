@@ -11,7 +11,7 @@
 
 ###############Globals###########
 
-NEW_SERVER=192.168.1.68
+NEW_SERVER="INSERT SERVER IP OR NAME HERE"
 USERNAME=$(who am i | awk '{print $1}')
 DOMAIN=$(hostname -d)
 FILES_DIR="./files"
@@ -70,7 +70,7 @@ function run_command() {
 
 	_ret=1
 	if $REMOTE; then
-		ssh -t $NEW_SERVER "$command"
+		ssh -t "$NEW_SERVER" "$command"
 	else
 		$command
 	fi
@@ -91,7 +91,7 @@ function copy_file_to_tmp() {
 
 	_ret=1
 	if $REMOTE; then
-		scp "$file" "$USERNAME"@$NEW_SERVER:/tmp
+		scp "$file" "$USERNAME"@"$NEW_SERVER":/tmp
 	else
 		cp "$file" /tmp/
 	fi
@@ -108,7 +108,7 @@ fi
 
 
 if $REMOTE; then
-	ssh-copy-id "$USERNAME"@$NEW_SERVER
+	ssh-copy-id "$USERNAME"@"$NEW_SERVER"
 else
 	sudo apt install openssh-server
 fi
