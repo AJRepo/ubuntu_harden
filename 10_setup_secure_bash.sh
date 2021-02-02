@@ -11,7 +11,7 @@
 
 ###############Globals###########
 
-NEW_SERVER="INSERT SERVER IP OR NAME HERE"
+NEW_SERVER=192.168.1.168
 USERNAME=$(who am i | awk '{print $1}')
 DOMAIN=$(hostname -d)
 FILES_DIR="./files"
@@ -110,7 +110,10 @@ fi
 if $REMOTE; then
 	ssh-copy-id "$USERNAME"@"$NEW_SERVER"
 else
-	sudo apt install openssh-server
+	if ! sudo apt install openssh-server; then
+		echo "Install openssh-server failed"
+		exit 1
+  fi
 fi
 
 
@@ -146,7 +149,7 @@ else
 	exit 1
 fi
 
-if ! $REMOTE && [ -s "/home/$USERNAME/.ssh/authorized_hosts" ] ; then
+if ! $REMOTE && [ -s "/home/$USERNAME/.ssh/authorized_keys" ] ; then
 	#Only run this if running on the local server
 	if ssh-keygen; then
 		echo "public/private key for server generated"
@@ -154,11 +157,11 @@ if ! $REMOTE && [ -s "/home/$USERNAME/.ssh/authorized_hosts" ] ; then
 fi
 
 echo "Attempting to lock down ssh to key access only"
-#First check that the file /home/$USERNAME/.ssh/authorized_hosts exists otherwise
+#First check that the file /home/$USERNAME/.ssh/authorized_keys exists otherwise
 #	you lock yourself out. 
 if ! $REMOTE ; then
-	if [[ ! -s /home/$USERNAME/.ssh/authorized_hosts ]]; then
-		echo "Not setting up key only ssh because authorized_hosts file is empty"
+	if [[ ! -s /home/$USERNAME/.ssh/authorized_keys ]]; then
+		echo "Not setting up key only ssh because authorized_keys file is empty"
 		echo "Stopping here. Rerun once set, or run from remote machine"
 		exit 1
 	fi
